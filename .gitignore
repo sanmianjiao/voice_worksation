@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+models/
+data/
+logs/
+.downloads/
+deliverables/
+/整理说明.md
+*.pyc
+
+# Local credentials and environment overrides must not be published.
+.env
+.env.*
+!.env.example
+*.pem
+*.key

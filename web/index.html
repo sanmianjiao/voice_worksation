@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>声刻 — 本地 AI 配音工作台</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js?v=1.0.1" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="声刻首页"><span class="brand-icon">声</span><span>声刻<small>VOICE STUDIO</small></span></a>
+    <div class="nav-label">工作空间</div>
+    <a class="nav active" href="#studio"><span>◉</span> 配音工作台</a>
+    <a class="nav" href="#library"><span>▤</span> 音色资料库 <span id="profileCount" class="count">0</span></a>
+    <a class="nav" href="#history"><span>◷</span> 生成记录</a>
+    <div class="sidebar-bottom">
+      <div class="local-dot">本地运行 · 素材不上传</div>
+      <p>让声音延续表达。<br>让创作保留温度。</p>
+      <span class="version">QWEN3-TTS / 0.6B BASE</span>
+    </div>
+  </aside>
+  <main id="studio">
+    <header><div class="breadcrumb">工作空间 <span>/</span> 配音工作台</div><div id="modelStatus" class="badge">正在连接…</div></header>
+    <section class="heading">
+      <div><div class="eyebrow">YOUR VOICE, NEW STORIES</div><h1>把熟悉的声音，<em>写进新故事。</em></h1><p>从一段参考录音开始，制作属于你的视频旁白。</p></div>
+      <button id="releaseModel" class="button subtle">释放模型显存 ↗</button>
+    </section>
+    <div class="workspace">
+      <section class="panel reference-panel">
+        <div class="panel-heading"><div><span class="step">01</span><h2>建立参考音色</h2></div><span class="small-label">REFERENCE</span></div>
+        <div class="source-card">
+          <div class="file-icon">♫</div>
+          <div class="file-info"><strong id="sourceName">选择一段参考录音</strong><span id="sourceMeta">支持音频或含音轨的视频 · 最大 200MB</span></div>
+          <label class="button small">导入<input id="upload" type="file" accept=".mp3,.wav,.m4a,.flac,.ogg,.mp4,.aac,.webm" hidden></label>
+        </div>
+        <div class="wave-box"><canvas id="waveform" aria-label="参考音频波形；可点击定位"></canvas><div class="wave-caption"><span id="waveStart">00:00</span><span>点击波形定位试听</span><span id="waveEnd">00:00</span></div></div>
+        <audio id="sourcePlayer" controls preload="metadata"></audio>
+        <div class="section-label">截取清晰的单人声音 <span>建议 8–15 秒</span></div>
+        <div class="trim-controls">
+          <label>起点 / 秒<input id="clipStart" type="number" min="0" step="0.1" value="20"></label>
+          <span class="trim-dash">—</span>
+          <label>终点 / 秒<input id="clipEnd" type="number" min="3" step="0.1" value="32"></label>
+          <button class="button subtle" id="usePosition" title="从播放器当前时间开始选择 12 秒">使用当前位置</button>
+        </div>
+        <div class="tip">选择只有目标男声的完整句子，避开音乐、笑声和其他人说话。本工具不会自动区分说话人或分离背景音乐。</div>
+        <label class="field-label" for="profileName">音色名称</label>
+        <input id="profileName" type="text" maxlength="60" value="参考男声 · 01">
+        <button id="createProfile" class="button outline full">＋ 截取并保存参考音色</button>
+        <div id="referencePreview" class="reference-preview" hidden>
+          <div class="section-label">当前参考片段 <span id="clipMeta"></span></div>
+          <audio id="referencePlayer" controls preload="metadata"></audio>
+          <div class="transcript-heading"><label class="field-label" for="transcript">参考录音原文</label><button id="transcribe" class="text-button">自动识别 ↗</button></div>
+          <textarea id="transcript" rows="3" placeholder="完整克隆模式需要逐字匹配的参考原文。自动识别后请试听校对。"></textarea>
+          <button id="saveProfile" class="text-button">保存名称与校对原文</button>
+        </div>
+        <section id="library" class="library"><div class="section-label">我的音色 <span>本地保存</span></div><select id="profiles" aria-label="选择保存的音色"><option value="">尚未建立音色</option></select></section>
+      </section>
+      <section class="panel editor-panel">
+        <div class="panel-heading"><div><span class="step">02</span><h2>写下你的配音文案</h2></div><span class="small-label">CREATE</span></div>
+        <div class="editor-toolbar"><span><i class="green-dot"></i><span id="selectedVoice">未选择音色</span></span><button id="sampleScript" class="text-button">填入试音文案 ↗</button></div>
+        <textarea id="script" class="script-editor" maxlength="5000" placeholder="在这里输入视频旁白…&#10;&#10;用句号划分段落，让声音拥有自然的停顿。">这是一段由人工智能合成的配音测试，不是本人录音。
+每一个值得分享的故事，都需要一个有温度的声音。现在，让我们开始今天的内容。</textarea>
+        <div class="editor-footer"><span>长文自动分句 · 每句独立合成</span><span><b id="charCount">0</b> / 5000 字</span></div>
+        <div class="settings-grid">
+          <label>克隆模式<select id="mode"><option value="quick">快速试音 · 无需原文</option><option value="icl">完整克隆 · 需要参考原文</option></select></label>
+          <label>配音语言<select id="language"><option value="Chinese">中文</option><option value="English">English</option><option value="Auto">自动判断</option></select></label>
+          <label>语速 <output id="speedValue">1.00×</output><input id="speed" type="range" min="0.7" max="1.4" step="0.05" value="1"></label>
+          <label>句间停顿 <output id="gapValue">0.25 秒</output><input id="gap" type="range" min="0" max="1.5" step="0.05" value="0.25"></label>
+        </div>
+        <div class="mode-note" id="modeNote">快速模式只提取说话人特征，适合先验证音色。相似度需要你试听判断。</div>
+        <label class="consent"><input id="acknowledged" type="checkbox"><span>我了解：使用他人音色须取得授权，发布时应说明为 AI 合成，不得冒充本人发言。</span></label>
+        <button id="generate" class="button primary full"><span>✦</span> 生成 AI 配音 <span class="button-hint">LOCAL INFERENCE</span></button>
+        <div class="export-note">导出 48kHz WAV / MP3 / 分句 SRT / 完整工程包</div>
+      </section>
+    </div>
+    <section id="progressPanel" class="panel progress-panel" hidden aria-live="polite">
+      <div class="progress-title"><span id="jobMessage">正在处理…</span><button id="cancel" class="text-button">取消任务</button></div>
+      <progress id="jobProgress" max="100" value="0"></progress>
+      <p>生成速度取决于显卡和文案长度。取消会在当前处理步骤结束后生效。</p>
+    </section>
+    <section id="resultPanel" class="panel result-panel" hidden>
+      <div><span class="eyebrow">READY FOR YOUR TIMELINE</span><h2>你的配音，已经就绪。</h2><p id="resultMeta"></p></div>
+      <div class="result-audio"><span class="badge">AI 合成</span><audio id="resultPlayer" controls></audio><div id="downloads" class="downloads"></div></div>
+    </section>
+    <section id="history" class="history"><div class="section-label">最近生成 <span>保存在本机 data / outputs</span></div><div id="historyList" class="history-list"><p class="empty">生成的声音，会在这里留下记录。</p></div></section>
+    <footer>声刻 VOICE STUDIO <span>音色克隆 ≠ 身份认证 · 本版为配音系统，不包含数字人画面与口型驱动</span></footer>
+  </main>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
